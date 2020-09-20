@@ -329,7 +329,7 @@ def get_guestinfo_value(key):
                 LOG.error("Failed to get guestinfo value for key %s", key)
             else:
                 return handle_returned_guestinfo_val(key, stdout)
-        eexcept subp.ProcessExecutionError as error:
+        except subp.ProcessExecutionError as error:
             if error.stderr == NOVAL:
                 LOG.debug("No value found for key %s", key)
             else:
