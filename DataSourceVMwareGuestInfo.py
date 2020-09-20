@@ -39,6 +39,13 @@ from cloudinit import safeyaml
 from deepmerge import always_merger
 import netifaces
 
+# from cloud-init >= 20.3 subp is in its own module
+try:
+    from cloudinit.subp import subp, ProcessExecutionError
+except ImportError:
+    from cloudinit.util import subp, ProcessExecutionError
+
+
 LOG = logging.getLogger(__name__)
 NOVAL = "No value found"
 VMWARE_RPCTOOL = find_executable("vmware-rpctool")
@@ -50,7 +57,6 @@ CLEANUP_GUESTINFO = 'cleanup-guestinfo'
 WAIT_ON_NETWORK = 'wait-on-network'
 WAIT_ON_NETWORK_IPV4 = 'ipv4'
 WAIT_ON_NETWORK_IPV6 = 'ipv6'
-
 
 class NetworkConfigError(Exception):
     '''
@@ -301,7 +307,6 @@ def handle_returned_guestinfo_val(key, val):
     LOG.debug("No value found for key %s", key)
     return None
 
-
 def get_guestinfo_value(key):
     '''
     Returns a guestinfo value for the specified key.
@@ -316,7 +321,7 @@ def get_guestinfo_value(key):
 
     if data_access_method == VMWARE_RPCTOOL:
         try:
-            (stdout, stderr) = util.subp(
+            (stdout, stderr) = subp.subp(
                 [VMWARE_RPCTOOL, "info-get guestinfo." + key])
             if stderr == NOVAL:
                 LOG.debug("No value found for key %s", key)
@@ -324,7 +329,7 @@ def get_guestinfo_value(key):
                 LOG.error("Failed to get guestinfo value for key %s", key)
             else:
                 return handle_returned_guestinfo_val(key, stdout)
-        except util.ProcessExecutionError as error:
+        eexcept subp.ProcessExecutionError as error:
             if error.stderr == NOVAL:
                 LOG.debug("No value found for key %s", key)
             else:
@@ -359,10 +364,10 @@ def set_guestinfo_value(key, value):
 
     if data_access_method == VMWARE_RPCTOOL:
         try:
-            util.subp(
+            subp.subp(
                 [VMWARE_RPCTOOL, ("info-set guestinfo.%s %s" % (key, value))])
             return True
-        except util.ProcessExecutionError as error:
+        except subp.ProcessExecutionError as error:
             util.logexc(
                 LOG, "Failed to set guestinfo key=%s to value=%s: %s", key, value, error)
         except Exception:
